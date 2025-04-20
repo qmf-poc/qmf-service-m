@@ -1,4 +1,4 @@
-package qmf.poc.service.jsonrpc;
+package qmf.poc.service.jsonrpc.transport;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,6 +11,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static qmf.poc.service.log.LogHelper.ellipse;
+
 public class JsonRPCRequestManager {
     private final Map<Long, Pending> pendings = new ConcurrentHashMap<>();
 
@@ -22,7 +24,7 @@ public class JsonRPCRequestManager {
     }
 
     public void handleResult(JsonRPCResult result) {
-        log.trace("handleResult: id={} result={}", result.id, result.result);
+        log.trace("handleResult: id={} result={}", result.id, ellipse(result.result));
         Pending pending = pendings.remove(result.id);
 
         if (pending == null) {

@@ -10,4 +10,13 @@ public final class JsonRPCRequest extends JsonRPCMessage {
         this.method = method;
         this.params = params;
     }
+
+    @Override
+    public String toString() {
+        return "JsonRPCRequest{" +
+                "id=" + id +
+                ", method='" + method + '\'' +
+                ", params=" + params +
+                '}';
+    }
 }

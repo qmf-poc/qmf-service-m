@@ -4,26 +4,43 @@ import io.vertx.core.Vertx;
 import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import qmf.poc.service.agent.AgentClient;
 import qmf.poc.service.agentsregistry.AgentsRegistry;
 import qmf.poc.service.agentsregistry.impl.AgentRegistryMemory;
+import qmf.poc.service.jsonrpc.AgentClientJsonRPC;
+import qmf.poc.service.jsonrpc.transport.JsonRPCAgentsTransport;
+import qmf.poc.service.qmf.storage.QMFObjectStorage;
+import qmf.poc.service.qmf.storage.impl.QMFObjectStorageMemory;
 import qmf.poc.service.verticles.AgentsRegistryVerticle;
-import qmf.poc.service.verticles.HttpServerVerticle;
+import qmf.poc.service.verticles.HttpServerAgentVerticle;
+import qmf.poc.service.verticles.HttpServerAPIVerticle;
 
 public class Main {
     public static void main(String[] cli) {
         try {
             final Args args = new Args(cli);
 
-            if (args.printHelp) args.printHelp();
-            if (args.printVersion) System.out.println("agent-0.0.1");
+            if (args.printHelp) {
+                args.printHelp();
+                return;
+            }
+            if (args.printVersion) {
+                System.out.println("agent-0.0.1");
+                return;
+            }
+
+            final QMFObjectStorage qmfObjectStorage = new QMFObjectStorageMemory();
+            final AgentsRegistry agentsRegistry = new AgentRegistryMemory(args.agents);
+            final JsonRPCAgentsTransport jsonRPCAgentsTransport = new JsonRPCAgentsTransport();
+            final AgentClient agentClient = new AgentClientJsonRPC(jsonRPCAgentsTransport);
 
             final Vertx vertx = Vertx.vertx();
-            final AgentsRegistry agentsRegistry = new AgentRegistryMemory(args.agents);
 
             vertx.deployVerticle(new AgentsRegistryVerticle(agentsRegistry));
-            vertx.deployVerticle(new HttpServerVerticle(agentsRegistry));
+            vertx.deployVerticle(new HttpServerAPIVerticle(agentsRegistry, agentClient, qmfObjectStorage));
+            vertx.deployVerticle(new HttpServerAgentVerticle(jsonRPCAgentsTransport));
 
-            Runtime.getRuntime().addShutdownHook(new Thread(()->{
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 vertx.close();
                 log.info("Vert.x instance closed");
             }));

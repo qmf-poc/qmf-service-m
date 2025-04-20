@@ -1,4 +1,4 @@
-package qmf.poc.service.jsonrpc;
+package qmf.poc.service.jsonrpc.transport;
 
 import qmf.poc.service.jsonrpc.messages.JsonRPCError;
 import qmf.poc.service.jsonrpc.messages.JsonRPCRequest;

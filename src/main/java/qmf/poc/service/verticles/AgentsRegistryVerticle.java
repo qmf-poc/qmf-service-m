@@ -26,7 +26,7 @@ public class AgentsRegistryVerticle extends AbstractVerticle {
             final List<Agent> agents = registry.agents().toList();
             message.reply(agents);
             if (log.isTraceEnabled())
-                log.trace("agents list modified: {}", String.join(", ", agents.stream().map(Agent::id).toList()));
+                log.trace("agents list modified: {}", String.join(", ", agents.stream().map(a -> a.id() + '=' + a.active()).toList()));
             eb.publish(AGENT_LIST_MODIFIED, agents);
         });
         log.debug("eventbus register consumer: {}", AGENT_ENABLE);
@@ -36,16 +36,16 @@ public class AgentsRegistryVerticle extends AbstractVerticle {
             final List<Agent> agents = registry.agents().toList();
             message.reply(agents);
             if (log.isTraceEnabled())
-                log.trace("agents list modified: {}", String.join(", ", agents.stream().map(Agent::id).toList()));
+                log.trace("agents list modified: {}", String.join(", ", agents.stream().map(a -> a.id() + '=' + a.active()).toList()));
             eb.publish(AGENT_LIST_MODIFIED, agents);
         });
         log.debug("eventbus register consumer: {}", AGENT_DISABLE);
         log.info("Agents registry verticle started");
     }
 
-    public final static String AGENT_ENABLE = "qmf.agent.registry.enable";
-    public final static String AGENT_DISABLE = "qmf.agent.registry.disable";
-    public final static String AGENT_LIST_MODIFIED = "qmf.agent.registry.modified";
+    public final static String AGENT_ENABLE = "qmf.agents.registry.enable";
+    public final static String AGENT_DISABLE = "qmf.agents.registry.disable";
+    public final static String AGENT_LIST_MODIFIED = "qmf.agents.registry.modified";
 
     private final Logger log = LoggerFactory.getLogger(AgentsRegistryVerticle.class);
 }

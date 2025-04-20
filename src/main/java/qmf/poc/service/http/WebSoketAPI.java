@@ -1,7 +1,6 @@
 package qmf.poc.service.http;
 
 import io.vertx.core.Vertx;
-import io.vertx.core.buffer.Buffer;
 import io.vertx.core.eventbus.EventBus;
 import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.http.HttpServerRequest;
@@ -15,7 +14,7 @@ import java.util.List;
 
 import static qmf.poc.service.verticles.AgentsRegistryVerticle.AGENT_LIST_MODIFIED;
 
-public class WebSoketFrontend {
+public class WebSoketAPI {
     public static void upgraded(Vertx vertx, HttpServerRequest req, Logger log) {
         req.toWebSocket()
                 .onSuccess(webSocket -> {
