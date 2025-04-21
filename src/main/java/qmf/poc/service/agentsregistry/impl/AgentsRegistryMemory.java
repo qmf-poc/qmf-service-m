@@ -13,31 +13,33 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
 public class AgentsRegistryMemory implements AgentsRegistry, AgentsRegistryMutable {
-    private final Map<String, Boolean> agents = new ConcurrentHashMap<>();
+    private final Map<String, Agent> agents = new ConcurrentHashMap<>();
     private final List<Consumer<List<Agent>>> listeners = new LinkedList<>();
     private final Object listenersLock = new Object();
 
     public AgentsRegistryMemory(@NotNull List<String> agents) {
-        agents.forEach(agent -> this.agents.put(agent, false));
+        agents.forEach(agent -> this.agents.put(agent, new Agent(agent, false, agent)));
     }
 
     @Override
-    public Future<List<Agent>> enableAgent(String agentId) {
-        agents.put(agentId, true);
+    public Future<List<Agent>> enableAgent(String agentId, String db) {
+        agents.put(agentId, new Agent(agentId, true, db));
         notifyListeners();
         return Future.succeededFuture(agents());
     }
 
     @Override
     public Future<List<Agent>> disableAgent(String agentId) {
-        agents.put(agentId, false);
+        final Agent agent = agents.remove(agentId);
+        // agent expected to be present, but just in case
+        agents.put(agentId, new Agent(agentId, false, agent == null ? agentId : agent.db()));
         notifyListeners();
         return Future.succeededFuture(agents());
     }
 
     @Override
     public List<Agent> agents() {
-        return agents.entrySet().stream().map(e -> new Agent(e.getKey(), e.getValue())).toList();
+        return agents.values().stream().toList();
     }
 
     @Override

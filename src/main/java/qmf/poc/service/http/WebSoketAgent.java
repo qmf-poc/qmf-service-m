@@ -17,11 +17,12 @@ public class WebSoketAgent {
         req.toWebSocket()
                 .onSuccess(webSocket -> {
                     final String agentId = getAgentId(req);
+                    final String db = req.getParam("db");
                     log.debug("Agent {} connected from {}", agentId, req.remoteAddress());
                     final AtomicReference<Buffer> accumulatorRef = new AtomicReference<>(Buffer.buffer());
 
                     // notify agent is alive
-                    agentsRegistry.enableAgent(agentId);
+                    agentsRegistry.enableAgent(agentId, db == null ? agentId: db);
                     // make this agent available for sending requests
                     jsonRpcTransport.registerAgent(agentId, webSocket::writeTextMessage);
                     // Paranoid check
