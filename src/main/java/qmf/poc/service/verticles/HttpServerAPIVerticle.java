@@ -28,7 +28,7 @@ public class HttpServerAPIVerticle extends AbstractVerticle {
         vertx.createHttpServer()
                 .requestHandler(req -> {
                     if ("/rpc".equals(req.path())) {
-                        WebSoketAPI.upgraded(vertx, req, log);
+                        WebSoketAPI.upgraded(req, registry, log);
                     } else {
                         router.handle(req);
                     }

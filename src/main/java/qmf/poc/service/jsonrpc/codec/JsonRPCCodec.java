@@ -48,7 +48,7 @@ public class JsonRPCCodec {
             case JsonRPCBroadcast broadcast -> encodeBroadcast(broadcast.method, broadcast.params);
             case JsonRPCRequest request -> encodeRequest(request.id, request.method, request.params);
             case JsonRPCResult response -> encodeResponse(response.id, response.result);
-            case JsonRPCError error -> encodeError(error.id, error.error.code, error.error.message, error.error.data);
+            case JsonRPCError error -> encodeError(error.id, error.error.code(), error.error.message(), error.error.data());
             default -> throw new JsonRPCEncodeError("Unexpected value (should never happen): " + message);
         };
     }

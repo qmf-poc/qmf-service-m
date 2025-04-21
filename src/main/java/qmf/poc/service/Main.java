@@ -10,7 +10,6 @@ import qmf.poc.service.jsonrpc.AgentClientJsonRPC;
 import qmf.poc.service.jsonrpc.transport.JsonRPCAgentsTransport;
 import qmf.poc.service.qmf.storage.QMFObjectStorage;
 import qmf.poc.service.qmf.storage.impl.QMFObjectStorageMemory;
-import qmf.poc.service.verticles.AgentsRegistryVerticle;
 import qmf.poc.service.verticles.HttpServerAgentVerticle;
 import qmf.poc.service.verticles.HttpServerAPIVerticle;
 
@@ -35,9 +34,8 @@ public class Main {
 
             final Vertx vertx = Vertx.vertx();
 
-            vertx.deployVerticle(new AgentsRegistryVerticle(agentsRegistry));
             vertx.deployVerticle(new HttpServerAPIVerticle(agentsRegistry, agentClient, qmfObjectStorage));
-            vertx.deployVerticle(new HttpServerAgentVerticle(jsonRPCAgentsTransport));
+            vertx.deployVerticle(new HttpServerAgentVerticle(jsonRPCAgentsTransport, agentsRegistry));
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 vertx.close();

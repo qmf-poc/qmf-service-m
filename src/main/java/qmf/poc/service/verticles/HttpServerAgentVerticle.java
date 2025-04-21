@@ -4,14 +4,17 @@ import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import qmf.poc.service.agentsregistry.AgentsRegistryMutable;
 import qmf.poc.service.http.WebSoketAgent;
 import qmf.poc.service.jsonrpc.transport.JsonRPCAgentsTransport;
 
 public class HttpServerAgentVerticle extends AbstractVerticle {
     private final JsonRPCAgentsTransport broker;
+    private final AgentsRegistryMutable agentsRegistry;
 
-    public HttpServerAgentVerticle(JsonRPCAgentsTransport broker) {
+    public HttpServerAgentVerticle(JsonRPCAgentsTransport broker, AgentsRegistryMutable agentsRegistry) {
         this.broker = broker;
+        this.agentsRegistry = agentsRegistry;
     }
 
     @Override
@@ -19,7 +22,7 @@ public class HttpServerAgentVerticle extends AbstractVerticle {
         vertx.createHttpServer()
                 .requestHandler(req -> {
                     if ("/agent".equals(req.path())) {
-                        WebSoketAgent.upgraded(vertx, req, broker);
+                        WebSoketAgent.upgraded(req, broker, agentsRegistry);
                     }
                 })
                 .listen(PORT)

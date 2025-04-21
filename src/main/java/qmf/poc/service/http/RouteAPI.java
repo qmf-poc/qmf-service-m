@@ -10,7 +10,6 @@ import io.vertx.ext.web.handler.LoggerHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qmf.poc.service.agent.AgentClient;
-import qmf.poc.service.agentsregistry.Agent;
 import qmf.poc.service.agentsregistry.AgentsRegistry;
 import qmf.poc.service.qmf.storage.QMFObjectStorage;
 import qmf.poc.service.qmf.storage.QMFObjectStorageException;

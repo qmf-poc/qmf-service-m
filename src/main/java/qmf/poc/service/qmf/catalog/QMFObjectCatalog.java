@@ -1,9 +1,6 @@
 package qmf.poc.service.qmf.catalog;
 
-import io.vertx.core.json.Json;
 import io.vertx.core.json.JsonObject;
-
-import java.util.Map;
 
 public record QMFObjectCatalog(
         String owner,

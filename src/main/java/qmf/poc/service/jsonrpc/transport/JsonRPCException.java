@@ -8,9 +8,9 @@ public class JsonRPCException extends Exception {
     public final JsonRPCRequest request;
 
     public JsonRPCException(JsonRPCRequest request, JsonRPCError.Error error) {
-        super("JsonRPC Error: (" + error.code + ") " +
-                error.message + (error.data != null ? " - " +
-                error.data : "") + ". Request: " + request.toString());
+        super("JsonRPC Error: (" + error.code() + ") " +
+                error.message() + (error.data() != null ? " - " +
+                error.data() : "") + ". Request: " + request.toString());
         this.error = error;
         this.request = request;
     }
