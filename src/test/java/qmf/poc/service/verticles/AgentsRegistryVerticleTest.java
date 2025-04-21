@@ -9,8 +9,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import qmf.poc.service.agentsregistry.Agent;
-import qmf.poc.service.agentsregistry.impl.AgentRegistryMemory;
-import qmf.poc.service.agentsregistry.AgentsRegistry;
+import qmf.poc.service.agentsregistry.AgentsRegistryMutable;
+import qmf.poc.service.agentsregistry.impl.AgentsRegistryMemory;
 
 import java.util.List;
 
@@ -20,12 +20,12 @@ import static qmf.poc.service.verticles.AgentsRegistryVerticle.AGENT_LIST_MODIFI
 @ExtendWith(VertxExtension.class)
 class AgentsRegistryVerticleTest {
 
-    private AgentsRegistry mockRegistry;
+    private AgentsRegistryMutable mockRegistry;
 
     @BeforeEach
     void setup() {
         // Mock registry with some test agents
-        mockRegistry = new AgentRegistryMemory(List.of("a", "b"));
+        mockRegistry = new AgentsRegistryMemory(List.of("a", "b"));
     }
 
     @Test

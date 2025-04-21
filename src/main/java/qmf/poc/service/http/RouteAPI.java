@@ -17,6 +17,7 @@ import qmf.poc.service.qmf.storage.QMFObjectStorageException;
 import qmf.poc.service.qmf.storage.models.QMFObjectDocument;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
 
@@ -209,21 +210,22 @@ public class RouteAPI {
         return routingContext -> routingContext
                 .response()
                 .putHeader("Content-Type", "application/json")
-                .end(new JsonArray(registry.agents().toList()).encode());
+                .end(new JsonArray(registry.agents()).encode());
     }
 
     private static String getAgentId(RoutingContext routingContext, AgentsRegistry registry) {
         final String agentId = routingContext.request().getParam("agent");
         if (agentId == null || agentId.isEmpty()) {
-            final Optional<Agent> agents = registry.agents().findFirst();
-            if (agents.isPresent()) {
-                return agents.get().id();
+            try {
+                return registry.agents().getFirst().id();
+            } catch (NoSuchElementException e) {
+                log.error("Missing agent ID and not one agent connected");
+                routingContext
+                        .response()
+                        .setStatusCode(400)
+                        .end("Missing agent ID");
+                return null;
             }
-            log.error("Missing agent ID and not one agent connected");
-            routingContext
-                    .response()
-                    .setStatusCode(400)
-                    .end("Missing agent ID");
         }
         return agentId;
     }

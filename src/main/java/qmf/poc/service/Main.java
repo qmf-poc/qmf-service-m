@@ -5,8 +5,7 @@ import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qmf.poc.service.agent.AgentClient;
-import qmf.poc.service.agentsregistry.AgentsRegistry;
-import qmf.poc.service.agentsregistry.impl.AgentRegistryMemory;
+import qmf.poc.service.agentsregistry.impl.AgentsRegistryMemory;
 import qmf.poc.service.jsonrpc.AgentClientJsonRPC;
 import qmf.poc.service.jsonrpc.transport.JsonRPCAgentsTransport;
 import qmf.poc.service.qmf.storage.QMFObjectStorage;
@@ -30,7 +29,7 @@ public class Main {
             }
 
             final QMFObjectStorage qmfObjectStorage = new QMFObjectStorageMemory();
-            final AgentsRegistry agentsRegistry = new AgentRegistryMemory(args.agents);
+            final AgentsRegistryMemory agentsRegistry = new AgentsRegistryMemory(args.agents);
             final JsonRPCAgentsTransport jsonRPCAgentsTransport = new JsonRPCAgentsTransport();
             final AgentClient agentClient = new AgentClientJsonRPC(jsonRPCAgentsTransport);
 

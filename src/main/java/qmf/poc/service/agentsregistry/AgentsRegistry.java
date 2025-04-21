@@ -1,9 +1,7 @@
 package qmf.poc.service.agentsregistry;
 
-import java.util.stream.Stream;
+import java.util.List;
 
 public interface AgentsRegistry {
-    void enableAgent(String agentId);
-    void disableAgent(String agentId);
-    Stream<Agent> agents();
+    List<Agent> agents();
 }
