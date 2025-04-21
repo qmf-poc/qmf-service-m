@@ -10,6 +10,7 @@ import io.vertx.ext.web.handler.LoggerHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qmf.poc.service.agent.AgentClient;
+import qmf.poc.service.agentsregistry.Agent;
 import qmf.poc.service.agentsregistry.AgentsRegistry;
 import qmf.poc.service.qmf.storage.QMFObjectStorage;
 import qmf.poc.service.qmf.storage.QMFObjectStorageException;
@@ -29,11 +30,11 @@ public class RouteAPI {
         // the service is alive
         router.route("/ping").handler(pingHandler);
         // the agent is alive
-        final Handler<RoutingContext> pingAgentHandler = pingAgentHandler(agentClient);
+        final Handler<RoutingContext> pingAgentHandler = pingAgentHandler(agentClient, registry);
         router.route("/ping-agent").handler(pingAgentHandler);
         router.route("/agent-ping").handler(pingAgentHandler);
         // sync the agent
-        final Handler<RoutingContext> syncAgentHandler = syncAgentHandler(agentClient, storage);
+        final Handler<RoutingContext> syncAgentHandler = syncAgentHandler(agentClient, storage, registry);
         router.route("/sync").handler(syncAgentHandler);
         router.route("/catalog").handler(syncAgentHandler);
         router.route("/snapshot").handler(syncAgentHandler);
@@ -46,7 +47,7 @@ public class RouteAPI {
         router.route("/retrieve").handler(queryHandler);
         final Handler<RoutingContext> getHandler = getHandler(storage);
         router.route("/get").handler(getHandler);
-        final Handler<RoutingContext> runHandler = runHandler(agentClient);
+        final Handler<RoutingContext> runHandler = runHandler(agentClient, registry);
         router.route("/run").handler(runHandler);
 
         return router;
@@ -61,9 +62,9 @@ public class RouteAPI {
                 routingContext.response().end("Pong=" + payload);
             };
 
-    private static Handler<RoutingContext> pingAgentHandler(AgentClient agentClient) {
+    private static Handler<RoutingContext> pingAgentHandler(AgentClient agentClient, AgentsRegistry agentsRegistry) {
         return routingContext -> {
-            String agentId = getAgentId(routingContext);
+            String agentId = getAgentId(routingContext, agentsRegistry);
             if (agentId == null) return;
             String payload = routingContext.request().getParam("payload");
             log.trace("Ping agent {} with payload: {}", agentId, payload);
@@ -82,9 +83,9 @@ public class RouteAPI {
         };
     }
 
-    private static Handler<RoutingContext> syncAgentHandler(AgentClient agentClient, QMFObjectStorage storage) {
+    private static Handler<RoutingContext> syncAgentHandler(AgentClient agentClient, QMFObjectStorage storage, AgentsRegistry agentsRegistry) {
         return routingContext -> {
-            String agentId = getAgentId(routingContext);
+            String agentId = getAgentId(routingContext, agentsRegistry);
             if (agentId == null) return;
             log.trace("Sync agent {}", agentId);
 
@@ -167,9 +168,9 @@ public class RouteAPI {
         };
     }
 
-    private static Handler<RoutingContext> runHandler(AgentClient agentClient) {
+    private static Handler<RoutingContext> runHandler(AgentClient agentClient, AgentsRegistry agentsRegistry) {
         return routingContext -> {
-            String agentId = getAgentId(routingContext);
+            String agentId = getAgentId(routingContext, agentsRegistry);
             if (agentId == null) return;
             String owner = routingContext.request().getParam("owner");
             if (owner == null || owner.isEmpty()) {
@@ -211,10 +212,14 @@ public class RouteAPI {
                 .end(new JsonArray(registry.agents().toList()).encode());
     }
 
-    private static String getAgentId(RoutingContext routingContext) {
-        String agentId = routingContext.request().getParam("agent");
+    private static String getAgentId(RoutingContext routingContext, AgentsRegistry registry) {
+        final String agentId = routingContext.request().getParam("agent");
         if (agentId == null || agentId.isEmpty()) {
-            log.error("Missing agent ID");
+            final Optional<Agent> agents = registry.agents().findFirst();
+            if (agents.isPresent()) {
+                return agents.get().id();
+            }
+            log.error("Missing agent ID and not one agent connected");
             routingContext
                     .response()
                     .setStatusCode(400)
