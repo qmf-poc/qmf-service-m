@@ -1,6 +1,7 @@
 package qmf.poc.service.http;
 
 import io.vertx.core.http.HttpServerRequest;
+import io.vertx.core.http.ServerWebSocket;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import qmf.poc.service.agentsregistry.Agent;
@@ -18,18 +19,22 @@ public class WebSoketAPI {
         req.toWebSocket()
                 .onSuccess(webSocket -> {
 
-                    final Consumer<List<Agent>> listener = agents -> {
-                        try {
-                            final JsonRPCBroadcast broadcast = new JsonRPCBroadcast("agent_modified", agents);
-                            webSocket.writeTextMessage(JsonRPCCodec.encode(broadcast));
-                        } catch (JsonRPCEncodeError e) {
-                            log.error("Failed to send agent_modified broadcast", e);
-                        }
-                    };
+                    broadcastAgents(registry.agents(), webSocket, log);
+
+                    final Consumer<List<Agent>> listener = agents -> broadcastAgents(agents, webSocket, log);
                     registry.addListener(listener);
 
                     webSocket.closeHandler(v -> registry.removeListener(listener));
                 })
                 .onFailure(err -> log.error("WebSocket upgrade failed", err));
+    }
+
+    private static void broadcastAgents(List<Agent> agents, @NotNull ServerWebSocket webSocket, Logger log) {
+        try {
+            final JsonRPCBroadcast broadcast = new JsonRPCBroadcast("agent_modified", agents);
+            webSocket.writeTextMessage(JsonRPCCodec.encode(broadcast));
+        } catch (JsonRPCEncodeError e) {
+            log.error("Failed to send agent_modified broadcast", e);
+        }
     }
 }
