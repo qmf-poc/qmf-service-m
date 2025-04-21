@@ -1,6 +1,7 @@
 package qmf.poc.service.qmf.catalog;
 
 import io.vertx.core.json.JsonObject;
+import org.jetbrains.annotations.Nullable;
 
 public record QMFObjectCatalog(
         String owner,
@@ -16,7 +17,11 @@ public record QMFObjectCatalog(
         String appldata,
         String remarks
 ) {
+    @Nullable
     public static QMFObjectCatalog fromMap(JsonObject jsonObject) {
+        if (jsonObject == null) {
+            return null;
+        }
         try {
             return new QMFObjectCatalog(
                     jsonObject.getString("owner"),

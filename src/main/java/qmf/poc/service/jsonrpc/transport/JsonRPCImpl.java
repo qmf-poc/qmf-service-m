@@ -1,5 +1,7 @@
 package qmf.poc.service.jsonrpc.transport;
 
+import io.vertx.core.Future;
+import io.vertx.core.Promise;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qmf.poc.service.jsonrpc.messages.JsonRPCError;
@@ -7,23 +9,21 @@ import qmf.poc.service.jsonrpc.messages.JsonRPCRequest;
 import qmf.poc.service.jsonrpc.messages.JsonRPCResult;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static qmf.poc.service.log.LogHelper.ellipse;
 
-public class JsonRPCRequestManager {
+public class JsonRPCImpl {
     private final Map<Long, Pending> pendings = new ConcurrentHashMap<>();
 
-    public CompletionStage<Object> rememberRequest(JsonRPCRequest request) {
-        CompletableFuture<Object> future = new CompletableFuture<>();
-        pendings.put(request.id, new Pending(future, request));
+    public Future<Object> rememberRequest(JsonRPCRequest request) {
+        Promise<Object> promise = Promise.promise();
+        pendings.put(request.id, new Pending(promise, request));
         log.trace("rememberRequest: id={} method={} params={}", request.id, request.method, request.params);
-        return future;
+        return promise.future();
     }
 
-    public void handleResult(JsonRPCResult result) {
+    public void acceptResult(JsonRPCResult result) {
         log.trace("handleResult: id={} result={}", result.id, ellipse(result.result));
         Pending pending = pendings.remove(result.id);
 
@@ -32,11 +32,10 @@ public class JsonRPCRequestManager {
             return;
         }
 
-        CompletableFuture<Object> future = pending.completable;
-        future.complete(result.result);
+        pending.promise.complete(result.result);
     }
 
-    public void handleError(JsonRPCError error) {
+    public void acceptError(JsonRPCError error) {
         Pending pending = pendings.remove(error.id);
 
         if (pending == null) {
@@ -44,28 +43,19 @@ public class JsonRPCRequestManager {
             return;
         }
 
-        CompletableFuture<Object> completable = pending.completable;
-        completable.completeExceptionally(new JsonRPCException(pending.request, error.error));
+        pending.promise.fail(new JsonRPCException(pending.request, error.error));
     }
 
     public void close() {
         pendings.forEach((i, c) -> {
             if (c != null) {
-                c.completable.cancel(true);
+                c.promise.fail("Cancelled");
             }
         });
     }
 
-    public long id() {
-        long id = System.currentTimeMillis();
-        while (pendings.containsKey(id)) {
-            id++;
-        }
-        return id;
-    }
+    static private final Logger log = LoggerFactory.getLogger(JsonRPCImpl.class);
 
-    static private final Logger log = LoggerFactory.getLogger(JsonRPCRequestManager.class);
-
-    private record Pending(CompletableFuture<Object> completable, JsonRPCRequest request) {
+    private record Pending(Promise<Object> promise, JsonRPCRequest request) {
     }
 }

@@ -1,6 +1,7 @@
 package qmf.poc.service.agentsregistry.impl;
 
 import io.vertx.core.Future;
+import org.jetbrains.annotations.NotNull;
 import qmf.poc.service.agentsregistry.Agent;
 import qmf.poc.service.agentsregistry.AgentsRegistry;
 import qmf.poc.service.agentsregistry.AgentsRegistryMutable;
@@ -16,7 +17,7 @@ public class AgentsRegistryMemory implements AgentsRegistry, AgentsRegistryMutab
     private final List<Consumer<List<Agent>>> listeners = new LinkedList<>();
     private final Object listenersLock = new Object();
 
-    public AgentsRegistryMemory(List<String> agents) {
+    public AgentsRegistryMemory(@NotNull List<String> agents) {
         agents.forEach(agent -> this.agents.put(agent, false));
     }
 

@@ -2,6 +2,7 @@ package qmf.poc.service.http;
 
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.http.HttpServerRequest;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qmf.poc.service.agentsregistry.AgentsRegistryMutable;
@@ -12,7 +13,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class WebSoketAgent {
 
-    public static void upgraded(HttpServerRequest req, JsonRPCAgentsTransport jsonRpcTransport, AgentsRegistryMutable agentsRegistry) {
+    public static void upgraded(@NotNull HttpServerRequest req, JsonRPCAgentsTransport jsonRpcTransport, AgentsRegistryMutable agentsRegistry) {
         req.toWebSocket()
                 .onSuccess(webSocket -> {
                     final String agentId = getAgentId(req);
@@ -56,7 +57,7 @@ public class WebSoketAgent {
                 .onFailure(err -> log.error("WebSocket upgrade failed", err));
     }
 
-    private static String getAgentId(HttpServerRequest req) {
+    private static String getAgentId(@NotNull HttpServerRequest req) {
         return req.getParam("agent") != null && !req.getParam("agent").isEmpty()
                 ? req.getParam("agent")
                 : "unknown-" + "-" + System.currentTimeMillis();

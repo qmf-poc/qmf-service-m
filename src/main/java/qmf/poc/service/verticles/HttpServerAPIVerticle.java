@@ -9,22 +9,25 @@ import qmf.poc.service.agent.AgentClient;
 import qmf.poc.service.agentsregistry.AgentsRegistry;
 import qmf.poc.service.http.RouteAPI;
 import qmf.poc.service.http.WebSoketAPI;
-import qmf.poc.service.qmf.storage.QMFObjectStorage;
+import qmf.poc.service.qmf.storage.QMFObjectsStorage;
+import qmf.poc.service.qmf.storage.QMFObjectsStorageMutable;
 
 public class HttpServerAPIVerticle extends AbstractVerticle {
     private final AgentsRegistry registry;
     private final AgentClient agentClient;
-    private final QMFObjectStorage storage;
+    private final QMFObjectsStorage storage;
+    private final QMFObjectsStorageMutable storageMutable;
 
-    public HttpServerAPIVerticle(AgentsRegistry registry, AgentClient agentClient, QMFObjectStorage storage) {
+    public HttpServerAPIVerticle(AgentsRegistry registry, AgentClient agentClient, QMFObjectsStorage storage, QMFObjectsStorageMutable storageMutable) {
         this.registry = registry;
         this.agentClient = agentClient;
         this.storage = storage;
+        this.storageMutable = storageMutable;
     }
 
     @Override
     public void start(Promise<Void> startPromise) {
-        final Router router = RouteAPI.router(vertx, registry, agentClient, storage );
+        final Router router = RouteAPI.router(vertx, registry, agentClient, storage, storageMutable);
         vertx.createHttpServer()
                 .requestHandler(req -> {
                     if ("/rpc".equals(req.path())) {

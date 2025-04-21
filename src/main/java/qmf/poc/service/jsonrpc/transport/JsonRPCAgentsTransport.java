@@ -1,5 +1,6 @@
 package qmf.poc.service.jsonrpc.transport;
 
+import io.vertx.core.Future;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qmf.poc.service.jsonrpc.codec.JsonRPCCodec;
@@ -11,8 +12,6 @@ import qmf.poc.service.jsonrpc.messages.JsonRPCRequest;
 import qmf.poc.service.jsonrpc.messages.JsonRPCResult;
 
 import java.util.Map;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
 
@@ -40,7 +39,7 @@ public class JsonRPCAgentsTransport {
         log.debug("unregister agent {}", agentId);
         final AgentContext context = transportByAgents.remove(agentId);
         if (context != null) {
-            context.jsonRPCRequestManager.close();
+            context.jsonRPCImpl.close();
         }
     }
 
@@ -54,8 +53,8 @@ public class JsonRPCAgentsTransport {
         try {
             JsonRPCMessage message = JsonRPCCodec.decode(messageString);
             switch (message) {
-                case JsonRPCResult result -> context.jsonRPCRequestManager.handleResult(result);
-                case JsonRPCError error -> context.jsonRPCRequestManager.handleError(error);
+                case JsonRPCResult result -> context.jsonRPCImpl.acceptResult(result);
+                case JsonRPCError error -> context.jsonRPCImpl.acceptError(error);
                 default -> log.warn("Unexpected message type: {}", message);
             }
         } catch (JsonRPCDecodeError e) {
@@ -63,11 +62,11 @@ public class JsonRPCAgentsTransport {
         }
     }
 
-    public CompletionStage<Object> sendRequest(String agentId, JsonRPCRequest request) {
+    public Future<Object> sendRequest(String agentId, JsonRPCRequest request) {
         final AgentContext context = transportByAgents.get(agentId);
         if (context == null) {
             log.error("agent {} not connected (sendRequest)", agentId);
-            return CompletableFuture.failedFuture(new AgentNotFoundException(agentId));
+            return Future.failedFuture(new AgentNotFoundException(agentId));
         }
 
         final String rpcMessage;
@@ -75,18 +74,17 @@ public class JsonRPCAgentsTransport {
             rpcMessage = JsonRPCCodec.encode(request);
         } catch (JsonRPCEncodeError e) {
             log.error("failed to encode request {} {}", request, e.getMessage());
-            return CompletableFuture.failedFuture(e);
+            return Future.failedFuture(e);
         }
 
-        final CompletionStage<Object> future = context.jsonRPCRequestManager.rememberRequest(request)
-                .thenApply(result -> {
+        final Future<Object> future = context.jsonRPCImpl.rememberRequest(request)
+                .onSuccess(result -> {
                     if (log.isTraceEnabled()) {
                         final String resultString = (result instanceof String) ? (String) result : result.toString();
                         log.trace("response: {} {}",
                                 agentId,
                                 ellipse(resultString));
                     }
-                    return result;
                 });
         log.trace("send encoded request: {} {}", agentId, ellipse(rpcMessage));
         context.sender.accept(rpcMessage);
@@ -95,7 +93,7 @@ public class JsonRPCAgentsTransport {
 
     private static class AgentContext {
         final Consumer<String> sender;
-        final JsonRPCRequestManager jsonRPCRequestManager = new JsonRPCRequestManager();
+        final JsonRPCImpl jsonRPCImpl = new JsonRPCImpl();
 
         public AgentContext(Consumer<String> sender) {
             this.sender = sender;

@@ -1,6 +1,7 @@
 package qmf.poc.service;
 
 import org.apache.commons.cli.*;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 
@@ -29,7 +30,7 @@ public class Args {
         System.out.println("-Dorg.slf4j.simpleLogger.defaultLogLevel=TRACE|DEBUG|INFO|WARN|ERROR");
     }
 
-    private String getOptionValue(CommandLine cmd, String option, String defaultValue) {
+    private String getOptionValue(@NotNull CommandLine cmd, String option, String defaultValue) {
         String arg = cmd.getOptionValue(option, null);
         if (arg == null) {
             arg = System.getenv(option.toUpperCase().replace('-', '_'));
@@ -40,12 +41,14 @@ public class Args {
         return arg;
     }
 
+    @NotNull
     private Boolean hasOption(CommandLine cmd, String option) {
         if (cmd.hasOption(option))
             return true;
         return System.getenv(option.toUpperCase().replace('-', '_')) != null;
     }
 
+    @NotNull
     private static Options getOptions() {
         final Options options = new Options();
         options.addOption("a", AGENTS, true, "List of agents to be used initially");

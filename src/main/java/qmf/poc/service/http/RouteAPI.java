@@ -7,21 +7,28 @@ import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.LoggerHandler;
+import org.jetbrains.annotations.Contract;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qmf.poc.service.agent.AgentClient;
 import qmf.poc.service.agentsregistry.AgentsRegistry;
-import qmf.poc.service.qmf.storage.QMFObjectStorage;
-import qmf.poc.service.qmf.storage.QMFObjectStorageException;
+import qmf.poc.service.qmf.storage.QMFObjectsStorage;
+import qmf.poc.service.qmf.storage.QMFObjectsStorageMutable;
 import qmf.poc.service.qmf.storage.models.QMFObjectDocument;
 
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.concurrent.CompletionException;
 
 public class RouteAPI {
-    public static Router router(Vertx vertx, AgentsRegistry registry, AgentClient agentClient, QMFObjectStorage storage) {
+    @org.jetbrains.annotations.NotNull
+    public static Router router(
+            Vertx vertx,
+            AgentsRegistry registry,
+            AgentClient agentClient,
+            QMFObjectsStorage storage,
+            QMFObjectsStorageMutable storageMutable) {
         // Create a new Router instance
         Router router = Router.router(vertx);
 
@@ -34,7 +41,7 @@ public class RouteAPI {
         router.route("/ping-agent").handler(pingAgentHandler);
         router.route("/agent-ping").handler(pingAgentHandler);
         // sync the agent
-        final Handler<RoutingContext> syncAgentHandler = syncAgentHandler(agentClient, storage, registry);
+        final Handler<RoutingContext> syncAgentHandler = syncAgentHandler(agentClient, storageMutable, registry);
         router.route("/sync").handler(syncAgentHandler);
         router.route("/catalog").handler(syncAgentHandler);
         router.route("/snapshot").handler(syncAgentHandler);
@@ -62,6 +69,8 @@ public class RouteAPI {
                 routingContext.response().end("Pong=" + payload);
             };
 
+    @NotNull
+    @Contract(pure = true)
     private static Handler<RoutingContext> pingAgentHandler(AgentClient agentClient, AgentsRegistry agentsRegistry) {
         return routingContext -> {
             String agentId = getAgentId(routingContext, agentsRegistry);
@@ -70,47 +79,46 @@ public class RouteAPI {
             log.trace("Ping agent {} with payload: {}", agentId, payload);
 
             agentClient.ping(agentId, payload)
-                    .thenAccept(reply -> {
+                    .onSuccess(reply -> {
                         log.trace("agent {} ping response: {}", agentId, reply);
                         routingContext.response().end(reply == null ? "null" : reply);
-                    }).exceptionally(ex -> {
-                        final Throwable throwable = unwrapCompletionException(ex);
+                    }).onFailure(throwable -> {
+                        // final Throwable throwable = unwrapCompletionException(ex);
                         final String message = throwable.getMessage();
                         log.trace("agent {} ping error: {}", agentId, throwable.getMessage(), throwable);
                         routingContext.response().setStatusCode(500).end("Error: " + message);
-                        return null;
                     });
         };
     }
 
-    private static Handler<RoutingContext> syncAgentHandler(AgentClient agentClient, QMFObjectStorage storage, AgentsRegistry agentsRegistry) {
+    @NotNull
+    @Contract(pure = true)
+    private static Handler<RoutingContext> syncAgentHandler(AgentClient agentClient, QMFObjectsStorageMutable storageMutable, AgentsRegistry agentsRegistry) {
         return routingContext -> {
             String agentId = getAgentId(routingContext, agentsRegistry);
             if (agentId == null) return;
             log.trace("Sync agent {}", agentId);
 
+            //noinspection CodeBlock2Expr
             agentClient.getCatalog(agentId)
-                    .thenAccept(reply -> {
-                        // log.trace("agent {} sync response: {}", agentId, reply);
+                    .compose(reply -> {
                         log.trace("agent {} sync returned {} objects", agentId, reply.size());
-                        try {
-                            storage.load(agentId, reply);
-                            routingContext.response().end("synced");
-                        } catch (QMFObjectStorageException e) {
-                            log.trace("agent {} sync error: {}", agentId, e.getMessage(), e);
-                            routingContext.response().setStatusCode(500).end("Error: " + e.getMessage());
-                        }
-                    }).exceptionally(ex -> {
-                        final Throwable throwable = unwrapCompletionException(ex);
+                        return storageMutable.load(agentId, reply);
+                    })
+                    .onSuccess(reply -> {
+                        routingContext.response().end("synced");
+                    }).onFailure(throwable -> {
+                        // final Throwable throwable = unwrapCompletionException(ex);
                         final String message = throwable.getMessage();
                         log.trace("agent {} sync error: {}", agentId, throwable.getMessage(), throwable);
                         routingContext.response().setStatusCode(500).end("Error: " + message);
-                        return null;
                     });
         };
     }
 
-    private static Handler<RoutingContext> queryHandler(QMFObjectStorage storage) {
+    @NotNull
+    @Contract(pure = true)
+    private static Handler<RoutingContext> queryHandler(QMFObjectsStorage storage) {
         return routingContext -> {
             String search = routingContext.request().getParam("search");
             String limitP = routingContext.request().getParam("limit");
@@ -123,23 +131,25 @@ public class RouteAPI {
             }
 
             log.trace("query catalog search: \"{}\", limit: {}", search, limit);
-
-            try {
-                final List<QMFObjectDocument> documents = storage.queryObject(search, limit == null ? -1 : limit)
-                        .toList();
-                log.trace("query catalog returned {} objects", documents.size());
-                routingContext.response()
-                        .putHeader("Content-Type", "application/json")
-                        .end(new JsonArray(documents).encode());
-            } catch (QMFObjectStorageException e) {
-                final String message = e.getMessage();
-                log.trace("query catalog error: {}", message, e);
-                routingContext.response().setStatusCode(400).end("Error: " + message);
-            }
+            storage.queryObjects(search, limit == null ? -1 : limit)
+                    .onSuccess(documentsStream -> {
+                        final List<QMFObjectDocument> documents = documentsStream.toList();
+                        log.trace("query catalog returned {} objects", documents.size());
+                        routingContext.response()
+                                .putHeader("Content-Type", "application/json")
+                                .end(new JsonArray(documents).encode());
+                    }).onFailure(throwable -> {
+                        // final Throwable throwable = unwrapCompletionException(ex);
+                        final String message = throwable.getMessage();
+                        log.trace("query catalog error: {}", message, throwable);
+                        routingContext.response().setStatusCode(400).end("Error: " + message);
+                    });
         };
     }
 
-    private static Handler<RoutingContext> getHandler(QMFObjectStorage storage) {
+    @NotNull
+    @Contract(pure = true)
+    private static Handler<RoutingContext> getHandler(QMFObjectsStorage storage) {
         return routingContext -> {
             String id = routingContext.request().getParam("id");
             if (id == null || id.isEmpty()) {
@@ -149,25 +159,24 @@ public class RouteAPI {
 
             log.trace("get catalog object id=\"{}\"", id);
 
-            try {
-                final Optional<QMFObjectDocument> documentO = storage.getObject(id);
-                if (documentO.isEmpty()) {
-                    routingContext.response().setStatusCode(404).end("document id=\""+id+"\" not found");
-                } else {
-                    final QMFObjectDocument document = documentO.get();
-                    log.trace("get catalog object id=\"{}\"", id);
-                    routingContext.response()
-                            .putHeader("Content-Type", "application/json")
-                            .end(JsonObject.mapFrom(document).encode());
-                }
-            } catch (QMFObjectStorageException e) {
-                final String message = e.getMessage();
-                log.trace("query catalog error: {}", message, e);
-                routingContext.response().setStatusCode(400).end("Error: " + message);
-            }
+            storage.getObject(id)
+                    .onSuccess(document -> {
+                        log.trace("get catalog object id=\"{}\"", id);
+                        routingContext.response()
+                                .putHeader("Content-Type", "application/json")
+                                .end(JsonObject.mapFrom(document).encode());
+                    }).onFailure(throwable -> {
+                        // final Throwable throwable = unwrapCompletionException(ex);
+                        final String message = throwable.getMessage();
+                        log.trace("query catalog error: {}", message, throwable);
+                        routingContext.response().setStatusCode(400).end("Error: " + message);
+                    });
+
         };
     }
 
+    @NotNull
+    @Contract(pure = true)
     private static Handler<RoutingContext> runHandler(AgentClient agentClient, AgentsRegistry agentsRegistry) {
         return routingContext -> {
             String agentId = getAgentId(routingContext, agentsRegistry);
@@ -192,19 +201,23 @@ public class RouteAPI {
             }
 
             agentClient.run(agentId, owner, name, limit)
-                    .thenAccept(reply -> {
-                        log.trace("agent {} run response: {}", agentId, reply.body());
-                        routingContext.response().end(JsonObject.mapFrom(reply).encode());
-                    }).exceptionally(ex -> {
-                        final Throwable throwable = unwrapCompletionException(ex);
+                    .onSuccess(reply -> {
+                        log.trace("agent {} run response: {}", agentId, reply);
+                        routingContext.response()
+                                .putHeader("Content-Type", "application/json")
+                                .end(JsonObject.mapFrom(reply).encode());
+                    })
+                    .onFailure(throwable -> {
+                        // final Throwable throwable = unwrapCompletionException(ex);
                         final String message = throwable.getMessage();
                         log.trace("agent {} run error: {}", agentId, throwable.getMessage(), throwable);
                         routingContext.response().setStatusCode(500).end("Error: " + message);
-                        return null;
                     });
         };
     }
 
+    @NotNull
+    @Contract(pure = true)
     private static Handler<RoutingContext> agentsHandler(AgentsRegistry registry) {
         return routingContext -> routingContext
                 .response()
@@ -212,6 +225,7 @@ public class RouteAPI {
                 .end(new JsonArray(registry.agents()).encode());
     }
 
+    @Nullable
     private static String getAgentId(RoutingContext routingContext, AgentsRegistry registry) {
         final String agentId = routingContext.request().getParam("agent");
         if (agentId == null || agentId.isEmpty()) {
@@ -227,12 +241,5 @@ public class RouteAPI {
             }
         }
         return agentId;
-    }
-
-    private static Throwable unwrapCompletionException(Throwable throwable) {
-        if (throwable instanceof CompletionException) {
-            return throwable.getCause();
-        }
-        return throwable;
     }
 }

@@ -8,8 +8,7 @@ import qmf.poc.service.agent.AgentClient;
 import qmf.poc.service.agentsregistry.impl.AgentsRegistryMemory;
 import qmf.poc.service.jsonrpc.AgentClientJsonRPC;
 import qmf.poc.service.jsonrpc.transport.JsonRPCAgentsTransport;
-import qmf.poc.service.qmf.storage.QMFObjectStorage;
-import qmf.poc.service.qmf.storage.impl.QMFObjectStorageMemory;
+import qmf.poc.service.qmf.storage.impl.QMFObjectsStorageMemory;
 import qmf.poc.service.verticles.HttpServerAgentVerticle;
 import qmf.poc.service.verticles.HttpServerAPIVerticle;
 
@@ -27,14 +26,14 @@ public class Main {
                 return;
             }
 
-            final QMFObjectStorage qmfObjectStorage = new QMFObjectStorageMemory();
+            final QMFObjectsStorageMemory qmfObjectStorage = new QMFObjectsStorageMemory();
             final AgentsRegistryMemory agentsRegistry = new AgentsRegistryMemory(args.agents);
             final JsonRPCAgentsTransport jsonRPCAgentsTransport = new JsonRPCAgentsTransport();
             final AgentClient agentClient = new AgentClientJsonRPC(jsonRPCAgentsTransport);
 
             final Vertx vertx = Vertx.vertx();
 
-            vertx.deployVerticle(new HttpServerAPIVerticle(agentsRegistry, agentClient, qmfObjectStorage));
+            vertx.deployVerticle(new HttpServerAPIVerticle(agentsRegistry, agentClient, qmfObjectStorage, qmfObjectStorage));
             vertx.deployVerticle(new HttpServerAgentVerticle(jsonRPCAgentsTransport, agentsRegistry));
 
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {

@@ -1,6 +1,7 @@
 package qmf.poc.service.http;
 
 import io.vertx.core.http.HttpServerRequest;
+import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import qmf.poc.service.agentsregistry.Agent;
 import qmf.poc.service.agentsregistry.AgentsRegistry;
@@ -13,7 +14,7 @@ import java.util.function.Consumer;
 
 
 public class WebSoketAPI {
-    public static void upgraded(HttpServerRequest req, AgentsRegistry registry, Logger log) {
+    public static void upgraded(@NotNull HttpServerRequest req, AgentsRegistry registry, Logger log) {
         req.toWebSocket()
                 .onSuccess(webSocket -> {
 
