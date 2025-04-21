@@ -24,7 +24,7 @@ public class Main {
                 return;
             }
             if (args.printVersion) {
-                System.out.println("agent-0.0.1");
+                Version.printVersion(log);
                 return;
             }
 

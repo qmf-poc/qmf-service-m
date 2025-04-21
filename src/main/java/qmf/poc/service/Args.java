@@ -49,6 +49,8 @@ public class Args {
     private static Options getOptions() {
         final Options options = new Options();
         options.addOption("a", AGENTS, true, "List of agents to be used initially");
+        options.addOption("h", HELP, false, "Show help");
+        options.addOption("v", VERSION, false, "print version");
         return options;
     }
 
