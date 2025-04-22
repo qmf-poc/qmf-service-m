@@ -2,10 +2,12 @@ package qmf.poc.service.http;
 
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.http.HttpMethod;
 import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
+import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.ext.web.handler.LoggerHandler;
 import org.jetbrains.annotations.Contract;
 import org.jetbrains.annotations.NotNull;
@@ -20,6 +22,7 @@ import qmf.poc.service.qmf.storage.models.QMFObjectDocument;
 
 import java.util.List;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 public class RouteAPI {
     @org.jetbrains.annotations.NotNull
@@ -34,6 +37,14 @@ public class RouteAPI {
 
         // Set up logging for all routes
         router.route().handler(LoggerHandler.create());
+        router.route().handler(
+                CorsHandler
+                        .create()
+                        .addOrigin("*")
+                        .allowedMethods(Set.of(
+                                HttpMethod.GET,
+                                HttpMethod.OPTIONS,
+                                HttpMethod.POST)));
         // the service is alive
         router.route("/ping").handler(pingHandler);
         // the agent is alive

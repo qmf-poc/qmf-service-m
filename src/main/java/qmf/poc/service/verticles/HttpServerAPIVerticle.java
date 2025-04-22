@@ -31,6 +31,14 @@ public class HttpServerAPIVerticle extends AbstractVerticle {
         vertx.createHttpServer()
                 .requestHandler(req -> {
                     if ("/rpc".equals(req.path())) {
+                        if ("OPTIONS".equalsIgnoreCase(req.method().name())) {
+                            req.response()
+                                    .putHeader("Access-Control-Allow-Origin", "*")
+                                    .putHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+                                    .setStatusCode(204) // No Content
+                                    .end();
+                            return;
+                        }
                         WebSoketAPI.upgraded(req, registry, log);
                     } else {
                         router.handle(req);
