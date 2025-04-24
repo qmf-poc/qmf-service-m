@@ -53,7 +53,7 @@ public class AgentsRegistryMemory implements AgentsRegistry, AgentsRegistryMutab
     }
 
     @Override
-    public synchronized void removeListener(Consumer<List<Agent>> listener) {
+    public void removeListener(Consumer<List<Agent>> listener) {
         synchronized (listenersLock) {
             if (listeners.isEmpty()) {
                 return;
