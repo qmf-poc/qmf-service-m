@@ -1,11 +1,9 @@
-package qmf.poc.service.qmf.storage;
+package qmf.poc.service.qmf.index;
 
 
 import io.vertx.core.Future;
-import qmf.poc.service.qmf.catalog.QMFObjectCatalog;
-import qmf.poc.service.qmf.storage.models.QMFObjectDocument;
+import qmf.poc.service.qmf.index.models.QMFObjectDocument;
 
-import java.util.List;
 import java.util.stream.Stream;
 
 public interface QMFObjectsStorage {

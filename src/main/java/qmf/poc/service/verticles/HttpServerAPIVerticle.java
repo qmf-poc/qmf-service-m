@@ -9,8 +9,8 @@ import qmf.poc.service.agent.AgentClient;
 import qmf.poc.service.agentsregistry.AgentsRegistry;
 import qmf.poc.service.http.RouteAPI;
 import qmf.poc.service.http.WebSoketAPI;
-import qmf.poc.service.qmf.storage.QMFObjectsStorage;
-import qmf.poc.service.qmf.storage.QMFObjectsStorageMutable;
+import qmf.poc.service.qmf.index.QMFObjectsStorage;
+import qmf.poc.service.qmf.index.QMFObjectsStorageMutable;
 
 public class HttpServerAPIVerticle extends AbstractVerticle {
     private final AgentsRegistry registry;

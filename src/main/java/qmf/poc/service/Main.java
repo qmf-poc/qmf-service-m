@@ -8,7 +8,7 @@ import qmf.poc.service.agent.AgentClient;
 import qmf.poc.service.agentsregistry.impl.AgentsRegistryMemory;
 import qmf.poc.service.jsonrpc.AgentClientJsonRPC;
 import qmf.poc.service.jsonrpc.transport.JsonRPCAgentsTransport;
-import qmf.poc.service.qmf.storage.impl.QMFObjectsStorageMemory;
+import qmf.poc.service.qmf.index.impl.QMFObjectsStorageMemory;
 import qmf.poc.service.verticles.HttpServerAgentVerticle;
 import qmf.poc.service.verticles.HttpServerAPIVerticle;
 

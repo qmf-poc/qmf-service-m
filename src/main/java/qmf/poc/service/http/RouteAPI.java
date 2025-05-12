@@ -16,9 +16,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import qmf.poc.service.agent.AgentClient;
 import qmf.poc.service.agentsregistry.AgentsRegistry;
-import qmf.poc.service.qmf.storage.QMFObjectsStorage;
-import qmf.poc.service.qmf.storage.QMFObjectsStorageMutable;
-import qmf.poc.service.qmf.storage.models.QMFObjectDocument;
+import qmf.poc.service.qmf.index.QMFObjectsStorage;
+import qmf.poc.service.qmf.index.QMFObjectsStorageMutable;
+import qmf.poc.service.qmf.index.models.QMFObjectDocument;
 
 import java.util.List;
 import java.util.NoSuchElementException;

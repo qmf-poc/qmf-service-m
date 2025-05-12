@@ -1,4 +1,4 @@
-package qmf.poc.service.qmf.storage.exceptions;
+package qmf.poc.service.qmf.index.exceptions;
 
 public class QMFObjectsStorageException extends Exception{
     public QMFObjectsStorageException(String message) {
